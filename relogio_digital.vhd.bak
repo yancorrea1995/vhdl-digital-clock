@@ -1,0 +1,68 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE ieee.numeric_std.all;
+USE work.PACOTE.all;
+ENTITY relogio_digital IS
+GENERIC (SEG: INTEGER := 49999999); -- DEFINE O NUMERO DE CLOCKS PARA CONTAR UM SEGUNDO
+PORT(
+        -- AQUI DEFIMOS AS ENTRADAS E SAIDAS
+ HEX0_D  :OUT STD_LOGIC_VECTOR (6 downto 0);
+ HEX1_D  :OUT STD_LOGIC_VECTOR (6 downto 0);
+ HEX2_D  :OUT STD_LOGIC_VECTOR (6 downto 0);
+ HEX3_D  :OUT STD_LOGIC_VECTOR (6 downto 0);
+ CLOCK_50 :IN STD_LOGIC
+);
+END relogio_digital;
+
+ARCHITECTURE behavioural OF relogio_digital IS 
+ SIGNAL TEMPORAL: INTEGER RANGE 0 TO SEG;
+
+  SIGNAL SS0: INTEGER RANGE 0 TO 59 := 0; -- SEGUNDOS
+ SIGNAL HH0: INTEGER RANGE 0 TO 9 := 0; --PRIMEIRO CARACTERE DA HORA
+ SIGNAL HH1: INTEGER RANGE 0 TO 2 := 0; --SEGUNDO CARACTERE DA HORA
+ SIGNAL MM0: INTEGER RANGE 0 TO 9 := 0; --PRIMEIRO CARACTERE DOS MINUTOS
+ SIGNAL MM1: INTEGER RANGE 0 TO 5 := 0; --SEGUNDO CARACTERE DOS MINUTOS
+ 
+BEGIN
+        -- ATRIBUI OS VALORES DOS SINAIS PARA O DISPLAY DE 7 SEGMENTOS
+ HEX0_D <= int2seg(MM0);
+ HEX1_D <= int2seg(MM1);
+ HEX2_D <= int2seg(HH0);
+ HEX3_D <= int2seg(HH1);
+ 
+ PROCESS(CLOCK_50) 
+ BEGIN
+  IF rising_edge(CLOCK_50) THEN -- NA BORDA DE SUBIDA
+                        -- SE O CONTADOR NAO CHEGAR NO FIM DE 1 SEG
+   IF(TEMPORAL /= SEG) THEN
+    TEMPORAL <= TEMPORAL + 1; -- INCREMENTA 
+                        -- SENAO, RESETA O CONTADOR E ATRIBUI UM SEGUNDO
+   ELSE 
+    TEMPORAL <= 0;
+    SS0 <= SS0 + 1;
+    IF(SS0 = 59) THEN -- 60 segundos eh 1 minuto
+     SS0 <= 0;
+     MM0 <= MM0 + 1;
+     IF(MM0 = 9) THEN -- CASO PASSE 10 minutos
+      MM0 <= 0; -- RESETA O DISPLAY 0
+      MM1 <= MM1 + 1; -- INCREMENTA O DISPLAY 1
+                                      -- 60 MINUTOS EH 1 HORA E ASSIM POR DIANTE...
+      IF(MM1 = 5) THEN 
+       MM1 <= 0;
+       HH0 <= HH0 + 1;
+       IF(HH0 = 9) THEN
+        HH0 <= 0;
+        HH1 <= HH1 + 1;
+        ELSIF (HH0 = 3 AND HH1 = 2) THEN
+         HH1 <= 0;
+         HH0 <= 0;
+         MM1 <= 0;
+         MM0 <= 0;
+       END IF;
+      END IF;
+     END IF;
+    END IF;
+   END IF;
+  END IF;
+ END PROCESS;
+END behavioural;
